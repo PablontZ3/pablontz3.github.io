@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TE Ventas">
 <title>TE Ventas · Registro Comercial</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 
 <!-- Tailwind + Chart.js + fonts -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -192,54 +195,12 @@
 
 <script>
 /* ============================================================
-   PWA: manifest + service worker generados dinámicamente
+   PWA: service worker real (manifest.json e iconos ya están
+   enlazados como archivos estáticos en el <head>)
    ============================================================ */
-(function setupPWA(){
-  const iconSVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-    <rect width='100' height='100' rx='22' fill='#0B0D10'/>
-    <path d='M55 12 22 56h20l-4 32 36-44H54l1-32z' fill='#F5B301'/>
-  </svg>`;
-  const iconURL = 'data:image/svg+xml;base64,' + btoa(iconSVG);
-  const manifest = {
-    name: "TE Ventas - Registro Comercial",
-    short_name: "TE Ventas",
-    start_url: ".",
-    display: "standalone",
-    background_color: "#0B0D10",
-    theme_color: "#0B0D10",
-    icons: [
-      { src: iconURL, sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
-    ],
-    shortcuts: [
-      { name: "Sumar Luz",      short_name: "Luz",      url: "./?quick=luz",      icons: [{ src: iconURL, sizes: "any" }] },
-      { name: "Sumar Gas",      short_name: "Gas",      url: "./?quick=gas",      icons: [{ src: iconURL, sizes: "any" }] },
-      { name: "Sumar Facilita", short_name: "Facilita", url: "./?quick=facilita", icons: [{ src: iconURL, sizes: "any" }] }
-    ]
-  };
-  const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
-  const link = document.createElement('link');
-  link.rel = 'manifest';
-  link.href = URL.createObjectURL(manifestBlob);
-  document.head.appendChild(link);
-
-  const favicon = document.createElement('link');
-  favicon.rel = 'icon'; favicon.href = iconURL;
-  document.head.appendChild(favicon);
-  const touchIcon = document.createElement('link');
-  touchIcon.rel = 'apple-touch-icon'; touchIcon.href = iconURL;
-  document.head.appendChild(touchIcon);
-
-  if ('serviceWorker' in navigator) {
-    const swCode = `
-      self.addEventListener('install', e => self.skipWaiting());
-      self.addEventListener('activate', e => self.clients.claim());
-      self.addEventListener('fetch', e => {});
-    `;
-    const swBlob = new Blob([swCode], {type:'application/javascript'});
-    const swURL = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swURL).catch(()=>{});
-  }
-})();
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 
 /* ============================================================
    STORAGE
