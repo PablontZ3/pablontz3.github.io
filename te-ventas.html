@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0D10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TE Ventas">
+<title>TE Ventas · Registro Comercial</title>
+
+<!-- Tailwind + Chart.js + fonts -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg: '#0B0D10', surface: '#15181D', surface2: '#1D2128', edge: '#262B33',
+          ink: '#EDEFF2', mute: '#8A93A3',
+          luz: '#F5B301', gas: '#3E8EDE', facilita: '#29C79A', danger: '#E5484D'
+        },
+        fontFamily: {
+          display: ['"Space Grotesk"','sans-serif'],
+          body: ['"Inter"','sans-serif']
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  html,body{ background:#0B0D10; overscroll-behavior:none; }
+  * { -webkit-tap-highlight-color: transparent; }
+  body { font-family:'Inter',sans-serif; }
+  .font-display{ font-family:'Space Grotesk',sans-serif; font-variant-numeric: tabular-nums; }
+  ::-webkit-scrollbar{ display:none; }
+  .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+  .tap{ transition: transform .08s ease; }
+  .tap:active{ transform: scale(.92); }
+  .meter-glow{ box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04); }
+  .view{ animation: fadein .25s ease; }
+  @keyframes fadein{ from{ opacity:0; transform: translateY(4px);} to{ opacity:1; transform:none;} }
+  input[type="date"]{ color-scheme: dark; }
+  .safe-bottom{ padding-bottom: env(safe-area-inset-bottom); }
+  .safe-top{ padding-top: env(safe-area-inset-top); }
+</style>
+</head>
+<body class="bg-bg text-ink font-body min-h-screen flex flex-col">
+
+<!-- Top bar -->
+<header class="safe-top sticky top-0 z-20 bg-bg/90 backdrop-blur border-b border-edge">
+  <div class="px-5 pt-4 pb-3 flex items-center justify-between">
+    <div>
+      <p class="text-[11px] tracking-widest text-mute uppercase font-semibold">TotalEnergies · Comercial</p>
+      <h1 class="font-display text-xl font-semibold -mt-0.5" id="header-title">Registro de hoy</h1>
+    </div>
+    <div class="text-right">
+      <p class="font-display text-sm text-mute" id="header-date"></p>
+    </div>
+  </div>
+</header>
+
+<main class="flex-1 px-5 pt-4 pb-28 max-w-md mx-auto w-full">
+
+  <!-- ===================== HOME VIEW ===================== -->
+  <section id="view-home" class="view space-y-3">
+
+    <div class="rounded-2xl bg-surface border border-edge p-4 flex items-center justify-between meter-glow">
+      <div>
+        <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Total de hoy</p>
+        <p class="font-display text-4xl font-bold" id="home-total">0</p>
+      </div>
+      <div class="text-right">
+        <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Racha activa</p>
+        <p class="font-display text-lg" id="home-streak">0 días</p>
+      </div>
+    </div>
+
+    <div id="home-cards" class="space-y-3"></div>
+
+    <p class="text-center text-xs text-mute pt-1">Toca <span class="text-ink font-semibold">+</span> por cada venta cerrada. Mantén pulsado <span class="text-ink font-semibold">+</span> para añadir 5.</p>
+  </section>
+
+  <!-- ===================== HISTORIAL VIEW ===================== -->
+  <section id="view-historial" class="view space-y-3 hidden">
+    <div class="rounded-2xl bg-surface border border-edge p-4">
+      <p class="text-[11px] uppercase tracking-widest text-mute font-semibold mb-2">Selecciona una fecha</p>
+      <input id="hist-date" type="date" class="w-full bg-surface2 border border-edge rounded-xl px-3 py-2.5 font-display text-base outline-none focus:border-luz">
+    </div>
+
+    <div id="hist-cards" class="space-y-3"></div>
+
+    <div class="rounded-2xl bg-surface border border-edge p-4">
+      <p class="text-[11px] uppercase tracking-widest text-mute font-semibold mb-3">Últimos días registrados</p>
+      <div id="hist-list" class="space-y-1.5 max-h-64 overflow-y-auto no-scrollbar"></div>
+    </div>
+  </section>
+
+  <!-- ===================== DASHBOARD VIEW ===================== -->
+  <section id="view-dashboard" class="view space-y-3 hidden">
+
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-2xl bg-surface border border-edge p-4">
+        <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Esta semana</p>
+        <p class="font-display text-2xl font-bold mt-1" id="stat-week">0</p>
+      </div>
+      <div class="rounded-2xl bg-surface border border-edge p-4">
+        <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Este mes</p>
+        <p class="font-display text-2xl font-bold mt-1" id="stat-month">0</p>
+      </div>
+      <div class="rounded-2xl bg-surface border border-edge p-4">
+        <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Global</p>
+        <p class="font-display text-2xl font-bold mt-1" id="stat-global">0</p>
+      </div>
+      <div class="rounded-2xl bg-surface border border-edge p-4">
+        <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Media diaria</p>
+        <p class="font-display text-2xl font-bold mt-1" id="stat-avg">0</p>
+        <p class="text-[10px] text-mute mt-1">Sobre días trabajados</p>
+      </div>
+    </div>
+
+    <div class="rounded-2xl bg-surface border border-edge p-4">
+      <p class="text-[11px] uppercase tracking-widest text-mute font-semibold mb-3">Desglose por producto (global)</p>
+      <div id="breakdown-bars" class="space-y-2.5"></div>
+    </div>
+
+    <div class="rounded-2xl bg-surface border border-edge p-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Evolución</p>
+        <div class="flex gap-1" id="range-buttons">
+          <button data-range="7" class="range-btn text-[10px] font-semibold px-2 py-1 rounded-lg bg-luz/20 text-luz">7D</button>
+          <button data-range="14" class="range-btn text-[10px] font-semibold px-2 py-1 rounded-lg bg-surface2 text-mute">14D</button>
+          <button data-range="30" class="range-btn text-[10px] font-semibold px-2 py-1 rounded-lg bg-surface2 text-mute">30D</button>
+        </div>
+      </div>
+      <div style="position:relative; height:220px; width:100%;">
+        <canvas id="evo-chart"></canvas>
+      </div>
+      <p id="chart-fallback" class="hidden text-xs text-mute text-center py-6">No se pudo cargar el gráfico (sin conexión o CDN bloqueado). El resto de la app funciona igual.</p>
+    </div>
+  </section>
+
+  <!-- ===================== AJUSTES VIEW ===================== -->
+  <section id="view-ajustes" class="view space-y-3 hidden">
+    <div class="rounded-2xl bg-surface border border-edge p-4 space-y-3">
+      <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Copia de seguridad</p>
+      <button id="btn-export" class="tap w-full bg-surface2 border border-edge rounded-xl py-3 font-semibold text-sm">⬇ Exportar datos (.json)</button>
+      <label class="tap block w-full bg-surface2 border border-edge rounded-xl py-3 font-semibold text-sm text-center cursor-pointer">
+        ⬆ Importar datos (.json)
+        <input id="btn-import" type="file" accept="application/json" class="hidden">
+      </label>
+      <p class="text-xs text-mute leading-relaxed">Los datos se guardan solo en este dispositivo (localStorage). Exporta con regularidad para no perder tu histórico si cambias de móvil.</p>
+    </div>
+
+    <div class="rounded-2xl bg-surface border border-edge p-4 space-y-3">
+      <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">Zona de riesgo</p>
+      <button id="btn-reset" class="tap w-full bg-danger/10 border border-danger/40 text-danger rounded-xl py-3 font-semibold text-sm">Borrar todos los datos</button>
+    </div>
+
+    <p class="text-center text-[11px] text-mute pt-2">TE Ventas · v1.0 · Instalado como app local</p>
+  </section>
+
+</main>
+
+<!-- Bottom nav -->
+<nav class="safe-bottom fixed bottom-0 inset-x-0 z-20 bg-surface/95 backdrop-blur border-t border-edge">
+  <div class="max-w-md mx-auto grid grid-cols-4">
+    <button data-view="home" class="nav-btn tap flex flex-col items-center gap-1 py-3 text-luz">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+      <span class="text-[10px] font-semibold">Hoy</span>
+    </button>
+    <button data-view="historial" class="nav-btn tap flex flex-col items-center gap-1 py-3 text-mute">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <span class="text-[10px] font-semibold">Historial</span>
+    </button>
+    <button data-view="dashboard" class="nav-btn tap flex flex-col items-center gap-1 py-3 text-mute">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20V10M12 20V4M20 20v-7"/></svg>
+      <span class="text-[10px] font-semibold">Panel</span>
+    </button>
+    <button data-view="ajustes" class="nav-btn tap flex flex-col items-center gap-1 py-3 text-mute">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.96 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.96a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.96 4.6a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 8.96a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15z"/></svg>
+      <span class="text-[10px] font-semibold">Ajustes</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+/* ============================================================
+   PWA: manifest + service worker generados dinámicamente
+   ============================================================ */
+(function setupPWA(){
+  const iconSVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <rect width='100' height='100' rx='22' fill='#0B0D10'/>
+    <path d='M55 12 22 56h20l-4 32 36-44H54l1-32z' fill='#F5B301'/>
+  </svg>`;
+  const iconURL = 'data:image/svg+xml;base64,' + btoa(iconSVG);
+  const manifest = {
+    name: "TE Ventas - Registro Comercial",
+    short_name: "TE Ventas",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#0B0D10",
+    theme_color: "#0B0D10",
+    icons: [
+      { src: iconURL, sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
+    ],
+    shortcuts: [
+      { name: "Sumar Luz",      short_name: "Luz",      url: "./?quick=luz",      icons: [{ src: iconURL, sizes: "any" }] },
+      { name: "Sumar Gas",      short_name: "Gas",      url: "./?quick=gas",      icons: [{ src: iconURL, sizes: "any" }] },
+      { name: "Sumar Facilita", short_name: "Facilita", url: "./?quick=facilita", icons: [{ src: iconURL, sizes: "any" }] }
+    ]
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(manifestBlob);
+  document.head.appendChild(link);
+
+  const favicon = document.createElement('link');
+  favicon.rel = 'icon'; favicon.href = iconURL;
+  document.head.appendChild(favicon);
+  const touchIcon = document.createElement('link');
+  touchIcon.rel = 'apple-touch-icon'; touchIcon.href = iconURL;
+  document.head.appendChild(touchIcon);
+
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('activate', e => self.clients.claim());
+      self.addEventListener('fetch', e => {});
+    `;
+    const swBlob = new Blob([swCode], {type:'application/javascript'});
+    const swURL = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swURL).catch(()=>{});
+  }
+})();
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+const STORE_KEY = 'te_ventas_data_v1';
+function loadData(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e){ return {}; } }
+function saveData(){ localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); }
+let DATA = loadData();
+
+const PRODUCTS = [
+  { key:'luz',      label:'Luz',      color:'#F5B301', bg:'bg-luz',      text:'text-luz',
+    icon:`<path stroke-linecap="round" stroke-linejoin="round" d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/>` },
+  { key:'gas',       label:'Gas',      color:'#3E8EDE', bg:'bg-gas',      text:'text-gas',
+    icon:`<path stroke-linecap="round" stroke-linejoin="round" d="M12 2c1 3-2 4-2 7a4 4 0 1 0 8 0c0-1.5-1-2.3-1.8-3.3.6 2-.4 2.8-1.2 2.3.8-2.5-1-3.7-3-6z"/>` },
+  { key:'facilita',  label:'Facilita', color:'#29C79A', bg:'bg-facilita',text:'text-facilita',
+    icon:`<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>` }
+];
+
+/* ============================================================
+   DATE UTILS
+   ============================================================ */
+function pad(n){ return n<10 ? '0'+n : ''+n; }
+function dateKey(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function keyToDate(k){ const [y,m,d]=k.split('-').map(Number); return new Date(y,m-1,d); }
+function todayKey(){ return dateKey(new Date()); }
+function startOfWeek(d){ const day=(d.getDay()+6)%7; const r=new Date(d); r.setDate(d.getDate()-day); r.setHours(0,0,0,0); return r; }
+function fmtLong(d){ return d.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' }); }
+function fmtShort(d){ return d.toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit' }); }
+
+/* ============================================================
+   DATA HELPERS
+   ============================================================ */
+function getDay(key){ return DATA[key] || { luz:0, gas:0, facilita:0 }; }
+function dayTotal(key){ const d=getDay(key); return d.luz+d.gas+d.facilita; }
+function changeCount(key, product, delta){
+  const cur = DATA[key] || { luz:0, gas:0, facilita:0 };
+  const next = { ...cur, [product]: Math.max(0, (cur[product]||0) + delta) };
+  if (next.luz===0 && next.gas===0 && next.facilita===0) delete DATA[key];
+  else DATA[key] = next;
+  saveData();
+}
+function setCount(key, product, value){
+  const cur = DATA[key] || { luz:0, gas:0, facilita:0 };
+  const v = Math.max(0, Math.floor(Number(value)||0));
+  const next = { ...cur, [product]: v };
+  if (next.luz===0 && next.gas===0 && next.facilita===0) delete DATA[key];
+  else DATA[key] = next;
+  saveData();
+}
+function allKeysSorted(){ return Object.keys(DATA).sort(); }
+function totalsForKeys(keys){
+  const t = { luz:0, gas:0, facilita:0 };
+  keys.forEach(k=>{ const d=DATA[k]; if(d){ t.luz+=d.luz; t.gas+=d.gas; t.facilita+=d.facilita; } });
+  return t;
+}
+function sumT(t){ return t.luz+t.gas+t.facilita; }
+function weekdaysBetween(start, end){
+  let c=0; const d=new Date(start);
+  while (d<=end){ const wd=d.getDay(); if(wd!==0 && wd!==6) c++; d.setDate(d.getDate()+1); }
+  return c;
+}
+function currentStreak(){
+  let streak=0; let cursor=new Date();
+  while (true){
+    const k=dateKey(cursor);
+    if (dayTotal(k)>0){ streak++; cursor.setDate(cursor.getDate()-1); }
+    else if (k===todayKey()) { cursor.setDate(cursor.getDate()-1); continue; }
+    else break;
+  }
+  return streak;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+const views = ['home','historial','dashboard','ajustes'];
+function showView(name){
+  views.forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('hidden', v!==name);
+  });
+  document.querySelectorAll('.nav-btn').forEach(btn=>{
+    const active = btn.dataset.view===name;
+    btn.classList.toggle('text-luz', active);
+    btn.classList.toggle('text-mute', !active);
+  });
+  const titles = { home:'Registro de hoy', historial:'Historial y edición', dashboard:'Panel de métricas', ajustes:'Ajustes' };
+  document.getElementById('header-title').textContent = titles[name];
+  if (name==='dashboard') renderDashboard();
+  if (name==='historial') renderHistorial();
+}
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> showView(btn.dataset.view));
+});
+
+/* ============================================================
+   PRODUCT CARD BUILDER (reusable for Home + Historial)
+   ============================================================ */
+function buildProductCard(p, key, editable){
+  const val = getDay(key)[p.key];
+  return `
+  <div class="rounded-2xl bg-surface border border-edge p-4 flex items-center gap-4 meter-glow">
+    <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style="background:${p.color}22">
+      <svg class="w-5 h-5" style="color:${p.color}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${p.icon}</svg>
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class="text-[11px] uppercase tracking-widest text-mute font-semibold">${p.label}</p>
+      <p class="font-display text-3xl font-bold" data-count="${p.key}" data-key="${key}">${val}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="tap w-9 h-9 rounded-full bg-surface2 border border-edge text-lg font-semibold flex items-center justify-center btn-minus" data-key="${key}" data-product="${p.key}">–</button>
+      <button class="tap w-11 h-11 rounded-full text-lg font-bold flex items-center justify-center btn-plus" style="background:${p.color};color:#0B0D10" data-key="${key}" data-product="${p.key}">+</button>
+    </div>
+  </div>`;
+}
+
+function attachCardEvents(container){
+  container.querySelectorAll('.btn-plus').forEach(btn=>{
+    let holdTimer=null, longPressed=false;
+    const doAdd = (n)=>{
+      changeCount(btn.dataset.key, btn.dataset.product, n);
+      if (navigator.vibrate) navigator.vibrate(10);
+      refreshCounts();
+    };
+    btn.addEventListener('click', ()=>{ if(!longPressed) doAdd(1); longPressed=false; });
+    btn.addEventListener('touchstart', ()=>{
+      longPressed=false;
+      holdTimer = setTimeout(()=>{ longPressed=true; doAdd(5); if(navigator.vibrate) navigator.vibrate([10,30,10]); }, 480);
+    });
+    btn.addEventListener('touchend', ()=> clearTimeout(holdTimer));
+  });
+  container.querySelectorAll('.btn-minus').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      changeCount(btn.dataset.key, btn.dataset.product, -1);
+      if (navigator.vibrate) navigator.vibrate(10);
+      refreshCounts();
+    });
+  });
+}
+
+function refreshCounts(){
+  document.querySelectorAll('[data-count]').forEach(el=>{
+    el.textContent = getDay(el.dataset.key)[el.dataset.count];
+  });
+  document.getElementById('home-total').textContent = dayTotal(todayKey());
+  document.getElementById('home-streak').textContent = currentStreak() + (currentStreak()===1 ? ' día' : ' días');
+  const histKey = document.getElementById('hist-date').value;
+  if (histKey) renderHistList();
+}
+
+/* ============================================================
+   HOME VIEW
+   ============================================================ */
+function renderHome(){
+  const now = new Date();
+  document.getElementById('header-date').textContent = fmtLong(now).replace(/^\w/, c=>c.toUpperCase());
+  const key = todayKey();
+  document.getElementById('home-total').textContent = dayTotal(key);
+  document.getElementById('home-streak').textContent = currentStreak() + (currentStreak()===1 ? ' día' : ' días');
+  const wrap = document.getElementById('home-cards');
+  wrap.innerHTML = PRODUCTS.map(p=>buildProductCard(p, key, true)).join('');
+  attachCardEvents(wrap);
+}
+
+/* ============================================================
+   HISTORIAL VIEW
+   ============================================================ */
+const histDateInput = document.getElementById('hist-date');
+histDateInput.value = todayKey();
+histDateInput.addEventListener('change', renderHistorialCards);
+
+function renderHistorial(){
+  renderHistorialCards();
+  renderHistList();
+}
+function renderHistorialCards(){
+  const key = histDateInput.value || todayKey();
+  const wrap = document.getElementById('hist-cards');
+  wrap.innerHTML = PRODUCTS.map(p=>buildProductCard(p, key, true)).join('');
+  attachCardEvents(wrap);
+}
+function renderHistList(){
+  const list = document.getElementById('hist-list');
+  const keys = allKeysSorted().reverse().slice(0,30);
+  if (keys.length===0){
+    list.innerHTML = `<p class="text-sm text-mute py-4 text-center">Aún no hay ventas registradas.</p>`;
+    return;
+  }
+  list.innerHTML = keys.map(k=>{
+    const d = getDay(k);
+    const t = dayTotal(k);
+    return `<button class="hist-item w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-surface2 text-left" data-key="${k}">
+      <span class="text-sm font-medium">${fmtShort(keyToDate(k))}</span>
+      <span class="flex items-center gap-3 text-xs text-mute">
+        <span class="text-luz">${d.luz}L</span><span class="text-gas">${d.gas}G</span><span class="text-facilita">${d.facilita}F</span>
+        <span class="font-display font-bold text-ink text-sm">${t}</span>
+      </span>
+    </button>`;
+  }).join('');
+  list.querySelectorAll('.hist-item').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      histDateInput.value = btn.dataset.key;
+      renderHistorialCards();
+    });
+  });
+}
+
+/* ============================================================
+   DASHBOARD VIEW
+   ============================================================ */
+let chartRange = 7;
+let evoChart = null;
+
+document.querySelectorAll('.range-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    chartRange = Number(btn.dataset.range);
+    document.querySelectorAll('.range-btn').forEach(b=>{
+      const on = b===btn;
+      b.classList.toggle('bg-luz/20', on); b.classList.toggle('text-luz', on);
+      b.classList.toggle('bg-surface2', !on); b.classList.toggle('text-mute', !on);
+    });
+    renderChart();
+  });
+});
+
+function renderDashboard(){
+  const now = new Date();
+  const wStart = startOfWeek(now);
+  const weekKeys = Array.from({length:7}, (_,i)=>{ const d=new Date(wStart); d.setDate(wStart.getDate()+i); return dateKey(d); });
+  const monthKeys = Array.from({length: new Date(now.getFullYear(), now.getMonth()+1, 0).getDate()}, (_,i)=> dateKey(new Date(now.getFullYear(), now.getMonth(), i+1)));
+  const all = allKeysSorted();
+
+  const weekT = sumT(totalsForKeys(weekKeys));
+  const monthT = sumT(totalsForKeys(monthKeys));
+  const globalT = totalsForKeys(all);
+  const globalSum = sumT(globalT);
+
+  document.getElementById('stat-week').textContent = weekT;
+  document.getElementById('stat-month').textContent = monthT;
+  document.getElementById('stat-global').textContent = globalSum;
+
+  let avg = 0;
+  if (all.length>0){
+    avg = globalSum / all.length;
+  }
+  document.getElementById('stat-avg').textContent = avg.toFixed(1);
+
+  const bd = document.getElementById('breakdown-bars');
+  bd.innerHTML = PRODUCTS.map(p=>{
+    const v = globalT[p.key];
+    const pct = globalSum>0 ? Math.round((v/globalSum)*100) : 0;
+    return `
+    <div>
+      <div class="flex justify-between text-xs mb-1">
+        <span class="font-semibold" style="color:${p.color}">${p.label}</span>
+        <span class="text-mute">${v} · ${pct}%</span>
+      </div>
+      <div class="h-2 rounded-full bg-surface2 overflow-hidden">
+        <div class="h-full rounded-full" style="width:${pct}%;background:${p.color}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderChart();
+}
+
+function renderChart(){
+  const canvas = document.getElementById('evo-chart');
+  const fallback = document.getElementById('chart-fallback');
+
+  if (typeof Chart === 'undefined'){
+    canvas.classList.add('hidden');
+    fallback.classList.remove('hidden');
+    return;
+  }
+  canvas.classList.remove('hidden');
+  fallback.classList.add('hidden');
+
+  const days = Array.from({length: chartRange}, (_,i)=>{
+    const d = new Date(); d.setDate(d.getDate() - (chartRange-1-i)); return d;
+  });
+  const labels = days.map(d=>fmtShort(d));
+  const dataFor = (prod)=> days.map(d=> getDay(dateKey(d))[prod]);
+
+  if (evoChart) { evoChart.destroy(); evoChart = null; }
+  evoChart = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: PRODUCTS.map(p=>({
+        label: p.label,
+        data: dataFor(p.key),
+        backgroundColor: p.color,
+        borderRadius: 4,
+        stack: 'total'
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color:'#8A93A3', font:{ family:'Inter', size:11 }, boxWidth:10 } }
+      },
+      scales: {
+        x: { stacked:true, ticks:{ color:'#8A93A3', font:{size:10} }, grid:{ display:false } },
+        y: { stacked:true, beginAtZero:true, ticks:{ color:'#8A93A3', stepSize:1, font:{size:10} }, grid:{ color:'#262B33' } }
+      }
+    }
+  });
+}
+
+/* ============================================================
+   AJUSTES: EXPORT / IMPORT / RESET
+   ============================================================ */
+document.getElementById('btn-export').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `te-ventas-${todayKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('btn-import').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try {
+      const imported = JSON.parse(reader.result);
+      if (typeof imported !== 'object' || imported===null) throw new Error('formato inválido');
+      DATA = { ...DATA, ...imported };
+      saveData();
+      alert('Datos importados correctamente.');
+      renderHome(); renderHistorial(); renderDashboard();
+    } catch(err){
+      alert('No se pudo importar el archivo. Comprueba que sea un JSON exportado desde esta app.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+document.getElementById('btn-reset').addEventListener('click', ()=>{
+  if (confirm('¿Seguro que quieres borrar todos los datos? Esta acción no se puede deshacer.')){
+    DATA = {}; saveData();
+    renderHome(); renderHistorial(); renderDashboard();
+  }
+});
+
+/* ============================================================
+   TOAST (feedback visual, útil también para confirmar que se guarda)
+   ============================================================ */
+function toast(msg){
+  let el = document.getElementById('te-toast');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'te-toast';
+    el.className = 'fixed left-1/2 -translate-x-1/2 bottom-24 z-30 bg-surface2 border border-edge text-ink text-sm font-semibold px-4 py-2 rounded-full shadow-lg transition-opacity duration-300';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.style.opacity = '0'; }, 1600);
+}
+
+/* ============================================================
+   ACCESOS RÁPIDOS (App Shortcuts: mantener pulsado el icono)
+   ?quick=luz|gas|facilita  ->  suma 1 venta de hoy sin abrir la interfaz
+   ============================================================ */
+function handleQuickAdd(){
+  const params = new URLSearchParams(window.location.search);
+  const quick = params.get('quick');
+  if (quick && PRODUCTS.some(p=>p.key===quick)){
+    changeCount(todayKey(), quick, 1);
+    if (navigator.vibrate) navigator.vibrate([10,30,10]);
+    const label = PRODUCTS.find(p=>p.key===quick).label;
+    toast(`+1 ${label} · Total hoy: ${dayTotal(todayKey())}`);
+    // limpia la URL para que no se repita el +1 si recargas
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+renderHome();
+showView('home');
+handleQuickAdd();
+refreshCounts();
+</script>
+</body>
+</html>
