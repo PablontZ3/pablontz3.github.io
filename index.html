@@ -634,7 +634,7 @@ function handleQuickAdd(){
         + Añadir Facilita también
       </button>
     ` : ''}
-    <p id="quick-hint" class="text-mute text-xs mt-6 opacity-0 transition-opacity duration-500">Guardado. Puedes cerrar esta ventana o volver atrás.</p>
+    <p id="quick-hint" class="text-mute text-xs mt-6 opacity-0 transition-opacity duration-500">Guardado ✓ Sal con el botón atrás o el gesto de inicio cuando quieras.</p>
   `;
   document.body.appendChild(overlay);
 
@@ -650,12 +650,10 @@ function handleQuickAdd(){
     });
   }
 
-  // Intento de cierre automático (puede no funcionar según el navegador/Android).
-  // Solo si NO hay botón de Facilita, para no cerrar antes de que puedas usarlo.
-  if (!facilitaBtn){
-    setTimeout(()=>{ try{ window.close(); }catch(e){} }, 550);
-  }
-  setTimeout(()=>{ const h = document.getElementById('quick-hint'); if (h) h.style.opacity = '1'; }, 700);
+  // Se queda visible hasta que el usuario cierre a mano (atrás / recientes).
+  // (Antes se intentaba window.close() automático, pero en algunos navegadores
+  // Android lo cierra a medias y deja una pantalla negra colgada.)
+  setTimeout(()=>{ const h = document.getElementById('quick-hint'); if (h) h.style.opacity = '1'; }, 400);
 
   return true;
 }
