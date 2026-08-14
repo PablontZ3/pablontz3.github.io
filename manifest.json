@@ -30,6 +30,18 @@
       "short_name": "Facilita",
       "url": "./index.html?quick=facilita",
       "icons": [{ "src": "icon-facilita.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Dual: Luz + Gas",
+      "short_name": "Dual",
+      "url": "./index.html?quick=dual",
+      "icons": [{ "src": "icon-dual.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "+9 Facilita",
+      "short_name": "+9 Facilita",
+      "url": "./index.html?quick=facilita9",
+      "icons": [{ "src": "icon-facilita9.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

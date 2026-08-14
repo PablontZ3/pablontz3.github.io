@@ -52,6 +52,15 @@
   input[type="date"]{ color-scheme: dark; }
   .safe-bottom{ padding-bottom: env(safe-area-inset-bottom); }
   .safe-top{ padding-top: env(safe-area-inset-top); }
+  body.quick-mode > header, body.quick-mode > main, body.quick-mode > nav{ display:none; }
+  #quick-splash{
+    position:fixed; inset:0; z-index:50; background:#0B0D10;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; padding:24px; text-align:center;
+  }
+  #quick-splash .check{ width:64px; height:64px; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
+  @keyframes popIn{ from{ transform:scale(.6); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  #quick-splash .check{ animation: popIn .25s ease; }
 </style>
 </head>
 <body class="bg-bg text-ink font-body min-h-screen flex flex-col">
@@ -573,46 +582,64 @@ document.getElementById('btn-reset').addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   TOAST (feedback visual, útil también para confirmar que se guarda)
-   ============================================================ */
-function toast(msg){
-  let el = document.getElementById('te-toast');
-  if (!el){
-    el = document.createElement('div');
-    el.id = 'te-toast';
-    el.className = 'fixed left-1/2 -translate-x-1/2 bottom-24 z-30 bg-surface2 border border-edge text-ink text-sm font-semibold px-4 py-2 rounded-full shadow-lg transition-opacity duration-300';
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-  el.style.opacity = '1';
-  clearTimeout(el._t);
-  el._t = setTimeout(()=>{ el.style.opacity = '0'; }, 1600);
-}
-
-/* ============================================================
    ACCESOS RÁPIDOS (App Shortcuts: mantener pulsado el icono)
-   ?quick=luz|gas|facilita  ->  suma 1 venta de hoy sin abrir la interfaz
+   ?quick=luz|gas|facilita|dual|facilita9
+   En vez de abrir la app normal, se muestra una pantalla de
+   confirmación a pantalla completa y se intenta cerrar sola.
+   (Un shortcut de PWA siempre abre una ventana -- no hay forma
+   de ejecutar la acción sin abrir nada, es una limitación de
+   Android. Esto es lo más "flash" que se puede conseguir.)
    ============================================================ */
+const QUICK_ACTIONS = {
+  luz:       { label: 'Luz',            items: [['luz',1]] },
+  gas:       { label: 'Gas',            items: [['gas',1]] },
+  facilita:  { label: 'Facilita',       items: [['facilita',1]] },
+  dual:      { label: 'Luz + Gas',      items: [['luz',1],['gas',1]] },
+  facilita9: { label: '+9 Facilita',    items: [['facilita',9]] },
+};
+
 function handleQuickAdd(){
   const params = new URLSearchParams(window.location.search);
   const quick = params.get('quick');
-  if (quick && PRODUCTS.some(p=>p.key===quick)){
-    changeCount(todayKey(), quick, 1);
-    if (navigator.vibrate) navigator.vibrate([10,30,10]);
-    const label = PRODUCTS.find(p=>p.key===quick).label;
-    toast(`+1 ${label} · Total hoy: ${dayTotal(todayKey())}`);
-    // limpia la URL para que no se repita el +1 si recargas
-    window.history.replaceState({}, '', window.location.pathname);
-  }
+  const action = QUICK_ACTIONS[quick];
+  if (!action) return false;
+
+  action.items.forEach(([prod, n]) => changeCount(todayKey(), prod, n));
+  if (navigator.vibrate) navigator.vibrate([10,30,10]);
+  window.history.replaceState({}, '', window.location.pathname);
+
+  document.body.classList.add('quick-mode');
+  const overlay = document.createElement('div');
+  overlay.id = 'quick-splash';
+  const detail = action.items.map(([prod,n])=>{
+    const p = PRODUCTS.find(x=>x.key===prod);
+    return `+${n} ${p.label}`;
+  }).join(' · ');
+  overlay.innerHTML = `
+    <div class="check" style="background:#F5B30122">
+      <svg class="w-8 h-8 text-luz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <p class="font-display text-2xl font-bold">${detail}</p>
+    <p class="text-mute text-sm">Total hoy: ${dayTotal(todayKey())}</p>
+    <p id="quick-hint" class="text-mute text-xs mt-6 opacity-0 transition-opacity duration-500">Guardado. Puedes cerrar esta ventana o volver atrás.</p>
+  `;
+  document.body.appendChild(overlay);
+
+  // Intento de cierre automático (puede no funcionar según el navegador/Android)
+  setTimeout(()=>{ try{ window.close(); }catch(e){} }, 550);
+  setTimeout(()=>{ const h = document.getElementById('quick-hint'); if (h) h.style.opacity = '1'; }, 700);
+
+  return true;
 }
 
 /* ============================================================
    INIT
    ============================================================ */
-renderHome();
-showView('home');
-handleQuickAdd();
-refreshCounts();
+const wasQuickAdd = handleQuickAdd();
+if (!wasQuickAdd) {
+  renderHome();
+  showView('home');
+}
 </script>
 </body>
 </html>
