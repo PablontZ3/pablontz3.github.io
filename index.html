@@ -221,7 +221,11 @@ function sanitizeStore(raw){
   const clean = {};
   for (const [key, val] of Object.entries(raw)) {
     if (!dateRe.test(key) || typeof val !== 'object' || val===null) continue;
-    const luz = Number(val.luz), gas = Number(val.gas), facilita = Number(val.facilita);
+    const [y,m,d] = key.split('-').map(Number);
+    const check = new Date(y, m-1, d);
+    const isRealDate = check.getFullYear()===y && check.getMonth()===m-1 && check.getDate()===d;
+    if (!isRealDate) continue;
+    const luz = Number(val.luz ?? 0), gas = Number(val.gas ?? 0), facilita = Number(val.facilita ?? 0);
     if (!Number.isFinite(luz) || !Number.isFinite(gas) || !Number.isFinite(facilita)) continue;
     if (luz===0 && gas===0 && facilita===0) continue;
     clean[key] = { luz: Math.max(0,Math.floor(luz)), gas: Math.max(0,Math.floor(gas)), facilita: Math.max(0,Math.floor(facilita)) };
@@ -583,7 +587,7 @@ document.getElementById('btn-reset').addEventListener('click', ()=>{
 
 /* ============================================================
    ACCESOS RÁPIDOS (App Shortcuts: mantener pulsado el icono)
-   ?quick=luz|gas|facilita|dual|facilita9
+   ?quick=luz|gas|facilita|dual
    En vez de abrir la app normal, se muestra una pantalla de
    confirmación a pantalla completa y se intenta cerrar sola.
    (Un shortcut de PWA siempre abre una ventana -- no hay forma
