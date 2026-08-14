@@ -206,7 +206,20 @@ if ('serviceWorker' in navigator) {
    STORAGE
    ============================================================ */
 const STORE_KEY = 'te_ventas_data_v1';
-function loadData(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e){ return {}; } }
+function sanitizeStore(raw){
+  if (typeof raw !== 'object' || raw===null || Array.isArray(raw)) return {};
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  const clean = {};
+  for (const [key, val] of Object.entries(raw)) {
+    if (!dateRe.test(key) || typeof val !== 'object' || val===null) continue;
+    const luz = Number(val.luz), gas = Number(val.gas), facilita = Number(val.facilita);
+    if (!Number.isFinite(luz) || !Number.isFinite(gas) || !Number.isFinite(facilita)) continue;
+    if (luz===0 && gas===0 && facilita===0) continue;
+    clean[key] = { luz: Math.max(0,Math.floor(luz)), gas: Math.max(0,Math.floor(gas)), facilita: Math.max(0,Math.floor(facilita)) };
+  }
+  return clean;
+}
+function loadData(){ try { return sanitizeStore(JSON.parse(localStorage.getItem(STORE_KEY))); } catch(e){ return {}; } }
 function saveData(){ localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); }
 let DATA = loadData();
 
@@ -257,11 +270,6 @@ function totalsForKeys(keys){
   return t;
 }
 function sumT(t){ return t.luz+t.gas+t.facilita; }
-function weekdaysBetween(start, end){
-  let c=0; const d=new Date(start);
-  while (d<=end){ const wd=d.getDay(); if(wd!==0 && wd!==6) c++; d.setDate(d.getDate()+1); }
-  return c;
-}
 function currentStreak(){
   let streak=0; let cursor=new Date();
   while (true){
@@ -298,7 +306,7 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 /* ============================================================
    PRODUCT CARD BUILDER (reusable for Home + Historial)
    ============================================================ */
-function buildProductCard(p, key, editable){
+function buildProductCard(p, key){
   const val = getDay(key)[p.key];
   return `
   <div class="rounded-2xl bg-surface border border-edge p-4 flex items-center gap-4 meter-glow">
@@ -318,18 +326,26 @@ function buildProductCard(p, key, editable){
 
 function attachCardEvents(container){
   container.querySelectorAll('.btn-plus').forEach(btn=>{
-    let holdTimer=null, longPressed=false;
+    let holdTimer=null, longPressed=false, startX=0, startY=0;
     const doAdd = (n)=>{
       changeCount(btn.dataset.key, btn.dataset.product, n);
       if (navigator.vibrate) navigator.vibrate(10);
       refreshCounts();
     };
+    const cancelHold = ()=>{ clearTimeout(holdTimer); };
     btn.addEventListener('click', ()=>{ if(!longPressed) doAdd(1); longPressed=false; });
-    btn.addEventListener('touchstart', ()=>{
+    btn.addEventListener('touchstart', (ev)=>{
       longPressed=false;
-      holdTimer = setTimeout(()=>{ longPressed=true; doAdd(5); if(navigator.vibrate) navigator.vibrate([10,30,10]); }, 480);
-    });
-    btn.addEventListener('touchend', ()=> clearTimeout(holdTimer));
+      const t = ev.touches[0];
+      startX = t.clientX; startY = t.clientY;
+      holdTimer = setTimeout(()=>{ longPressed=true; doAdd(5); if(navigator.vibrate) navigator.vibrate([10,30,10]); }, 550);
+    }, { passive:true });
+    btn.addEventListener('touchmove', (ev)=>{
+      const t = ev.touches[0];
+      if (Math.abs(t.clientX-startX) > 12 || Math.abs(t.clientY-startY) > 12) cancelHold();
+    }, { passive:true });
+    btn.addEventListener('touchend', cancelHold);
+    btn.addEventListener('touchcancel', cancelHold);
   });
   container.querySelectorAll('.btn-minus').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -345,7 +361,8 @@ function refreshCounts(){
     el.textContent = getDay(el.dataset.key)[el.dataset.count];
   });
   document.getElementById('home-total').textContent = dayTotal(todayKey());
-  document.getElementById('home-streak').textContent = currentStreak() + (currentStreak()===1 ? ' día' : ' días');
+  const streak = currentStreak();
+  document.getElementById('home-streak').textContent = streak + (streak===1 ? ' día' : ' días');
   const histKey = document.getElementById('hist-date').value;
   if (histKey) renderHistList();
 }
@@ -358,9 +375,10 @@ function renderHome(){
   document.getElementById('header-date').textContent = fmtLong(now).replace(/^\w/, c=>c.toUpperCase());
   const key = todayKey();
   document.getElementById('home-total').textContent = dayTotal(key);
-  document.getElementById('home-streak').textContent = currentStreak() + (currentStreak()===1 ? ' día' : ' días');
+  const streak = currentStreak();
+  document.getElementById('home-streak').textContent = streak + (streak===1 ? ' día' : ' días');
   const wrap = document.getElementById('home-cards');
-  wrap.innerHTML = PRODUCTS.map(p=>buildProductCard(p, key, true)).join('');
+  wrap.innerHTML = PRODUCTS.map(p=>buildProductCard(p, key)).join('');
   attachCardEvents(wrap);
 }
 
@@ -378,7 +396,7 @@ function renderHistorial(){
 function renderHistorialCards(){
   const key = histDateInput.value || todayKey();
   const wrap = document.getElementById('hist-cards');
-  wrap.innerHTML = PRODUCTS.map(p=>buildProductCard(p, key, true)).join('');
+  wrap.innerHTML = PRODUCTS.map(p=>buildProductCard(p, key)).join('');
   attachCardEvents(wrap);
 }
 function renderHistList(){
@@ -528,14 +546,20 @@ document.getElementById('btn-import').addEventListener('change', (e)=>{
   const reader = new FileReader();
   reader.onload = ()=>{
     try {
-      const imported = JSON.parse(reader.result);
-      if (typeof imported !== 'object' || imported===null) throw new Error('formato inválido');
-      DATA = { ...DATA, ...imported };
+      const raw = JSON.parse(reader.result);
+      if (typeof raw !== 'object' || raw===null || Array.isArray(raw)) {
+        throw new Error('el archivo no tiene el formato esperado.');
+      }
+      const clean = sanitizeStore(raw);
+      const importedDays = Object.keys(clean).length;
+      const skipped = Object.keys(raw).length - importedDays;
+      if (importedDays===0) throw new Error('no se encontró ningún día válido en el archivo.');
+      DATA = { ...DATA, ...clean };
       saveData();
-      alert('Datos importados correctamente.');
       renderHome(); renderHistorial(); renderDashboard();
+      alert(`Importado: ${importedDays} día(s).` + (skipped>0 ? ` Se ignoraron ${skipped} entrada(s) con formato inválido.` : ''));
     } catch(err){
-      alert('No se pudo importar el archivo. Comprueba que sea un JSON exportado desde esta app.');
+      alert('No se pudo importar el archivo: ' + err.message);
     }
   };
   reader.readAsText(file);
