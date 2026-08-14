@@ -1,6 +1,6 @@
 {
-  "name": "TE Ventas - Registro Comercial",
-  "short_name": "TE Ventas",
+  "name": "Ventas TotalEnergies",
+  "short_name": "Ventas TotalEnergies",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -17,19 +17,19 @@
       "name": "Sumar Luz",
       "short_name": "Luz",
       "url": "./index.html?quick=luz",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icon-luz.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Sumar Gas",
       "short_name": "Gas",
       "url": "./index.html?quick=gas",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icon-gas.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Sumar Facilita",
       "short_name": "Facilita",
       "url": "./index.html?quick=facilita",
-      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "icon-facilita.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

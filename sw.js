@@ -1,5 +1,5 @@
 const CACHE = 'te-ventas-v1';
-const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-luz.png', './icon-gas.png', './icon-facilita.png'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
