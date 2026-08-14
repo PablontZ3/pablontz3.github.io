@@ -591,11 +591,13 @@ document.getElementById('btn-reset').addEventListener('click', ()=>{
    Android. Esto es lo más "flash" que se puede conseguir.)
    ============================================================ */
 const QUICK_ACTIONS = {
-  luz:       { label: 'Luz',            items: [['luz',1]] },
-  gas:       { label: 'Gas',            items: [['gas',1]] },
-  facilita:  { label: 'Facilita',       items: [['facilita',1]] },
-  dual:      { label: 'Luz + Gas',      items: [['luz',1],['gas',1]] },
-  facilita9: { label: '+9 Facilita',    items: [['facilita',9]] },
+  luz:           { label: 'Luz',              items: [['luz',1]] },
+  gas:           { label: 'Gas',              items: [['gas',1]] },
+  facilita:      { label: 'Facilita',         items: [['facilita',1]] },
+  dual:          { label: 'Luz + Gas',        items: [['luz',1],['gas',1]] },
+  luz_facilita:  { label: 'Luz + Facilita',   items: [['luz',1],['facilita',1]] },
+  gas_facilita:  { label: 'Gas + Facilita',   items: [['gas',1],['facilita',1]] },
+  dual_facilita: { label: 'Luz + Gas + Facilita', items: [['luz',1],['gas',1],['facilita',1]] },
 };
 
 function handleQuickAdd(){
