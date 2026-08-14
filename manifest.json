@@ -36,24 +36,6 @@
       "short_name": "Dual",
       "url": "./index.html?quick=dual",
       "icons": [{ "src": "icon-dual.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "Luz + Facilita",
-      "short_name": "Luz+Facilita",
-      "url": "./index.html?quick=luz_facilita",
-      "icons": [{ "src": "icon-luz-facilita.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "Gas + Facilita",
-      "short_name": "Gas+Facilita",
-      "url": "./index.html?quick=gas_facilita",
-      "icons": [{ "src": "icon-gas-facilita.png", "sizes": "192x192", "type": "image/png" }]
-    },
-    {
-      "name": "Dual + Facilita (todo)",
-      "short_name": "Todo",
-      "url": "./index.html?quick=dual_facilita",
-      "icons": [{ "src": "icon-dual-facilita.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

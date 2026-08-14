@@ -591,13 +591,10 @@ document.getElementById('btn-reset').addEventListener('click', ()=>{
    Android. Esto es lo más "flash" que se puede conseguir.)
    ============================================================ */
 const QUICK_ACTIONS = {
-  luz:           { label: 'Luz',              items: [['luz',1]] },
-  gas:           { label: 'Gas',              items: [['gas',1]] },
-  facilita:      { label: 'Facilita',         items: [['facilita',1]] },
-  dual:          { label: 'Luz + Gas',        items: [['luz',1],['gas',1]] },
-  luz_facilita:  { label: 'Luz + Facilita',   items: [['luz',1],['facilita',1]] },
-  gas_facilita:  { label: 'Gas + Facilita',   items: [['gas',1],['facilita',1]] },
-  dual_facilita: { label: 'Luz + Gas + Facilita', items: [['luz',1],['gas',1],['facilita',1]] },
+  luz:      { label: 'Luz',       items: [['luz',1]] },
+  gas:      { label: 'Gas',       items: [['gas',1]] },
+  facilita: { label: 'Facilita',  items: [['facilita',1]] },
+  dual:     { label: 'Luz + Gas', items: [['luz',1],['gas',1]] },
 };
 
 function handleQuickAdd(){
@@ -613,22 +610,47 @@ function handleQuickAdd(){
   document.body.classList.add('quick-mode');
   const overlay = document.createElement('div');
   overlay.id = 'quick-splash';
-  const detail = action.items.map(([prod,n])=>{
+
+  const buildDetail = () => action.items.map(([prod,n])=>{
     const p = PRODUCTS.find(x=>x.key===prod);
     return `+${n} ${p.label}`;
   }).join(' · ');
+
+  // ¿Ya incluye Facilita esta acción? Si no, ofrecemos añadirla con un toque más.
+  const alreadyHasFacilita = action.items.some(([prod]) => prod === 'facilita');
+
   overlay.innerHTML = `
     <div class="check" style="background:#F5B30122">
       <svg class="w-8 h-8 text-luz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
     </div>
-    <p class="font-display text-2xl font-bold">${detail}</p>
-    <p class="text-mute text-sm">Total hoy: ${dayTotal(todayKey())}</p>
+    <p class="font-display text-2xl font-bold" id="quick-detail">${buildDetail()}</p>
+    <p class="text-mute text-sm" id="quick-total">Total hoy: ${dayTotal(todayKey())}</p>
+    ${!alreadyHasFacilita ? `
+      <button id="quick-add-facilita" class="tap mt-2 px-5 py-2.5 rounded-full font-semibold text-sm" style="background:#29C79A22;color:#29C79A;border:1px solid #29C79A55">
+        + Añadir Facilita también
+      </button>
+    ` : ''}
     <p id="quick-hint" class="text-mute text-xs mt-6 opacity-0 transition-opacity duration-500">Guardado. Puedes cerrar esta ventana o volver atrás.</p>
   `;
   document.body.appendChild(overlay);
 
-  // Intento de cierre automático (puede no funcionar según el navegador/Android)
-  setTimeout(()=>{ try{ window.close(); }catch(e){} }, 550);
+  const facilitaBtn = document.getElementById('quick-add-facilita');
+  if (facilitaBtn){
+    facilitaBtn.addEventListener('click', ()=>{
+      changeCount(todayKey(), 'facilita', 1);
+      if (navigator.vibrate) navigator.vibrate(15);
+      action.items.push(['facilita',1]);
+      document.getElementById('quick-detail').textContent = buildDetail();
+      document.getElementById('quick-total').textContent = `Total hoy: ${dayTotal(todayKey())}`;
+      facilitaBtn.remove();
+    });
+  }
+
+  // Intento de cierre automático (puede no funcionar según el navegador/Android).
+  // Solo si NO hay botón de Facilita, para no cerrar antes de que puedas usarlo.
+  if (!facilitaBtn){
+    setTimeout(()=>{ try{ window.close(); }catch(e){} }, 550);
+  }
   setTimeout(()=>{ const h = document.getElementById('quick-hint'); if (h) h.style.opacity = '1'; }, 700);
 
   return true;
